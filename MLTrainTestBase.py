@@ -17,8 +17,8 @@ import gc
 ###
 
 #Overall Info
-PROJECT = "LHClassifierGeoffSGDNetAdamTest1"
-MODEL_NAME = "AlexNetV1"
+PROJECT = "LHClassifierGeoffBinaryFullTrain"
+MODEL_NAME = "AlexNetV2"
 
 DEVICE = "cuda" if cuda.is_available() else "cpu"
 
@@ -28,10 +28,12 @@ WORKERS = 0
 BATCH_SIZE = 20
 
 EPOCHS = 100
-LOSS_FN = "Cross Entropy Loss"
-OPTIMIZER = "SGD"
+LOSS_FN = "BCELoss"
+OPTIMIZER = "Adam"
 MOMENTUM = 0.9
 LEARNING_RATE = 0.001
+
+CONFIDENCE_THRESHOLD = 0.8
 
 SEED = random.randint(0,9223372036854775807)
 
@@ -69,7 +71,8 @@ configuration = {"Model": MODEL_NAME,
                  "Device" : DEVICE,
                  "Epoch Save Interval": "Off" if EPOCH_SAVE_INTERVAL == 0 else EPOCH_SAVE_INTERVAL,
                  "Image Size": IMAGE_SIZE,
-                 "Seed" : SEED
+                 "Seed" : SEED,
+                 "Confidence Threshold": CONFIDENCE_THRESHOLD
                 }
 
 run = wandb.init(project=PROJECT,
@@ -116,13 +119,14 @@ gc.collect()
 from TrainingLoops import BinaryClassiferTrainingLoop
 from TestingLoops import BinaryClassiferTestingLoop
 
-LossFn = nn.CrossEntropyLoss()
-Optimizer = optim.SGD(Net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
-#Optimizer = optim.Adam(Net.parameters(),lr=LEARNING_RATE)
+#LossFn = nn.BCELoss()
+LossFn = nn.BCEWithLogitsLoss()
+#Optimizer = optim.SGD(Net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+Optimizer = optim.Adam(Net.parameters(),lr=LEARNING_RATE)
 
 for Epoch in range(EPOCHS):
     TrainingLoss = BinaryClassiferTrainingLoop(DEVICE,TrainLoader,Net,LossFn,Optimizer)
-    ValidationLoss,Correct = BinaryClassiferTestingLoop(DEVICE,ValidationLoader,Net,LossFn)
+    ValidationLoss,Correct = BinaryClassiferTestingLoop(DEVICE,ValidationLoader,Net,LossFn,CONFIDENCE_THRESHOLD)
 
     wandb.log({'Train Loss': TrainingLoss, 
                'Validation Loss': ValidationLoss,
@@ -140,7 +144,7 @@ gc.collect()
 ###
 
 if TESTING:
-    TestingLoss,Correct = BinaryClassiferTestingLoop(DEVICE,TestLoader,Net,LossFn)
+    TestingLoss,Correct = BinaryClassiferTestingLoop(DEVICE,TestLoader,Net,LossFn,CONFIDENCE_THRESHOLD)
     wandb.log({'Final Test Loss':TestingLoss,
                 'Final Test Correct': Correct})
 
