@@ -1,6 +1,8 @@
 from torch import no_grad, squeeze, float
+from UtilityFunctions import LogitPercentConverter as L2P
 import wandb
-def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn):
+def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn,Threshold = 0.8):
+    Threshold = L2P.ToLogit(Threshold)
     Size = len(DataLoader.dataset)
     Batches = len(DataLoader)
     Model.eval()
@@ -15,16 +17,20 @@ def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn):
             #Modes = Data['mode'].to(Device)
 
             xx = xx.reshape((BatchSize,1,ImageSize,ImageSize)).float().to(Device)
-            yy =yy.to(Device)
+            yy =yy.to(Device).float()
 
             #Outputs = squeeze(Model(Images))
-            out = Model(xx)
+            out = squeeze(Model(xx)).float()
 
             #TestLoss += LossFn(Outputs,Modes).item()
             TestLoss  += LossFn(out,yy).item()
 
+            
+
             #Correct += (Outputs.argmax(1) == Modes).type(float).sum().item()
-            Correct  += (out.argmax(1) == yy).type(float).sum().item()
+            Prediction = (out>Threshold)
+            #Correct  += (out.argmax(1) == yy).type(float).sum().item()
+            Correct += (Prediction == yy).sum().item()
 
             #wandb.log({'Testing Batch': Batch})
         TestLoss /= Batches
