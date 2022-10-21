@@ -13,15 +13,16 @@ def BinaryClassiferTrainingLoop(Device,DataLoader,Model,LossFn,Optimizer):
         #Modes = Data['mode'].to(Device)
 
         xx = xx.reshape((BatchSize,1,ImageSize,ImageSize)).float().to(Device)
-        yy = yy.to(Device)
+        yy = yy.to(Device).float()
 
         Optimizer.zero_grad()
 
         #Outputs = squeeze(Model(Images))
-        out = Model(xx)
+        out = squeeze(Model(xx)).float()
 
         #Loss = LossFn(Outputs, Modes)
         Loss = LossFn(out,yy)
+
 
         Loss.backward()
         Optimizer.step()
