@@ -17,7 +17,7 @@ import gc
 ###
 
 #Overall Info
-PROJECT = "LHClassifierGeoffBinaryFullTrain"
+PROJECT = "LHClassifierGeoffSaveLoadTest"
 MODEL_NAME = "AlexNetV2"
 
 DEVICE = "cuda" if cuda.is_available() else "cpu"
@@ -29,23 +29,25 @@ BATCH_SIZE = 20
 
 EPOCHS = 100
 LOSS_FN = "BCELoss"
-OPTIMIZER = "Adam"
+OPTIMIZER = "SGD"
 MOMENTUM = 0.9
 LEARNING_RATE = 0.001
 
 CONFIDENCE_THRESHOLD = 0.8
 
-SEED = random.randint(0,9223372036854775807)
+SEED = 8268595529767522000
+if not SEED:
+    SEED = random.randint(0,9223372036854775807)
 
 #Data Locations
-TRAINING_DATA_ROOT = "/home/dbren/VSCode/DataStore/TrainingFrames.npy"
-TRAINING_MODES_PATH = "/home/dbren/VSCode/DataStore/TrainingModes.npy"
+TRAINING_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Training"
+TRAINING_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Training/TrainingModes.npy"
 
-VALIDATION_DATA_ROOT = "/home/dbren/VSCode/DataStore/ValidationFrames.npy"
-VALIDATION_MODES_PATH = "/home/dbren/VSCode/DataStore/ValidationModes.npy"
+VALIDATION_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Validation"
+VALIDATION_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Validation/ValidationModes.npy"
 
-TESTING_DATA_ROOT = "/home/dbren/VSCode/DataStore/TestingFrames.npy"
-TESTING_MODES_PATH = "/home/dbren/VSCode/DataStore/TestingModes.npy"
+TESTING_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Testing"
+TESTING_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Testing/TestingModes.npy"
 
 IMAGE_SIZE = 512
 #Optional Modes
@@ -91,7 +93,7 @@ Net = AlexNet().to(DEVICE)
 ###
 #Data input
 ###
-
+'''
 TrainingDataFrames = from_numpy(load(TRAINING_DATA_ROOT))
 TrainingDataModes = from_numpy(load(TRAINING_MODES_PATH))
 TrainingDataSet = TensorDataset(TrainingDataFrames,TrainingDataModes)
@@ -111,6 +113,17 @@ TestLoader = DataLoader(TestingDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, 
 del TestingDataFrames, TestingDataMode
 
 gc.collect()
+'''
+from DataSets import NumpyDataSet
+
+TrainingDataSet = NumpyDataSet(TRAINING_DATA_ROOT,TRAINING_MODES_PATH)
+TrainLoader = DataLoader(TrainingDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
+
+ValidationDataSet = NumpyDataSet(VALIDATION_DATA_ROOT,VALIDATION_MODES_PATH)
+ValidationLoader = DataLoader(ValidationDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
+
+TestingDataSet = NumpyDataSet(TESTING_DATA_ROOT,TESTING_MODES_PATH)
+TestLoader = DataLoader(TestingDataSet, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS)
 
 ###
 #Training loop
@@ -121,8 +134,8 @@ from TestingLoops import BinaryClassiferTestingLoop
 
 #LossFn = nn.BCELoss()
 LossFn = nn.BCEWithLogitsLoss()
-#Optimizer = optim.SGD(Net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
-Optimizer = optim.Adam(Net.parameters(),lr=LEARNING_RATE)
+Optimizer = optim.SGD(Net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+#Optimizer = optim.Adam(Net.parameters(),lr=LEARNING_RATE)
 
 for Epoch in range(EPOCHS):
     TrainingLoss = BinaryClassiferTrainingLoop(DEVICE,TrainLoader,Net,LossFn,Optimizer)
@@ -140,11 +153,11 @@ del TrainingDataSet, TrainLoader, ValidationDataSet, ValidationLoader
 gc.collect()
 
 ###
-#Testing Loop
+#Final Testing Loop
 ###
 
 if TESTING:
-    TestingLoss,Correct = BinaryClassiferTestingLoop(DEVICE,TestLoader,Net,LossFn,CONFIDENCE_THRESHOLD)
+    TestingLoss,Correct = BinaryClassiferTestingLoop(DEVICE,TestLoader,Net,LossFn,CONFIDENCE_THRESHOLD,True)
     wandb.log({'Final Test Loss':TestingLoss,
                 'Final Test Correct': Correct})
 
@@ -153,4 +166,4 @@ if TESTING:
 ###
 
 if FINAL_SAVING:
-    save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,(PROJECT + "_" + wandb.run.name + "_Full_" + ".pth")))
+    save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,("{}_{}_Full.pth").format(PROJECT,wandb.run.name)))
