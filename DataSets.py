@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 from torch import is_tensor
 from torchvision.io import read_image
 import pandas as pd
+import numpy as np
 import os
 
 class H5FrameDataSet(Dataset):
@@ -33,4 +34,24 @@ class H5FrameDataSet(Dataset):
 
         sample = {'image' : image, 'mode' : mode}
 
+        return sample
+
+
+class NumpyDataSet(Dataset):
+    def __init__(self,image_path,mode_path,transform=None):
+        self.Modes = np.load(mode_path)
+        self.image_path = image_path
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.Modes)
+
+    def __getitem__(self, index):
+        mode = self.Modes[index]
+
+        image = np.load("{}/{}.npy".format(self.image_path,str(index).zfill(4)))
+        if self.transform:
+            image = self.transform(image)
+
+        sample = {'xx' : image, 'yy' : mode}
         return sample
