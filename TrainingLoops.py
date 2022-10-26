@@ -4,7 +4,10 @@ def BinaryClassiferTrainingLoop(Device,DataLoader,Model,LossFn,Optimizer):
     Batches = len(DataLoader)
     Model.train()
     Running_Loss = 0
-    for xx, yy in DataLoader:
+    for sample in DataLoader:
+
+        xx = sample['xx']
+        yy = sample['yy']
 
         BatchSize = xx.shape[0]
         ImageSize = xx.shape[1]
