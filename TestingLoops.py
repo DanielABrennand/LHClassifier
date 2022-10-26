@@ -1,14 +1,17 @@
 from torch import no_grad, squeeze, float
 from UtilityFunctions import LogitPercentConverter as L2P
 import wandb
-def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn,Threshold = 0.8):
+def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn,Threshold = 0.8,Final = False):
     Threshold = L2P.ToLogit(Threshold)
     Size = len(DataLoader.dataset)
     Batches = len(DataLoader)
     Model.eval()
     TestLoss, Correct = 0, 0
     with no_grad():
-        for xx, yy in DataLoader:
+        for sample in DataLoader:
+
+            xx = sample['xx']
+            yy = sample['yy']
 
             BatchSize = xx.shape[0]
             ImageSize = xx.shape[1]
@@ -21,6 +24,10 @@ def BinaryClassiferTestingLoop(Device,DataLoader,Model,LossFn,Threshold = 0.8):
 
             #Outputs = squeeze(Model(Images))
             out = squeeze(Model(xx)).float()
+
+            if Final:
+                for pred in out:
+                    wandb.log({'Final Test Output': pred})
 
             #TestLoss += LossFn(Outputs,Modes).item()
             TestLoss  += LossFn(out,yy).item()
