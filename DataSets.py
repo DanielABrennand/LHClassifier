@@ -4,6 +4,7 @@ from torchvision.io import read_image
 import pandas as pd
 import numpy as np
 import os
+import h5py
 
 class H5FrameDataSet(Dataset):
     def __init__(self,root,csv_path,image_path,transform=None):
@@ -54,4 +55,38 @@ class NumpyDataSet(Dataset):
             image = self.transform(image)
 
         sample = {'xx' : image, 'yy' : mode}
+        return sample
+
+class H5DataSet(Dataset):
+    def __init__(self,h5path,tagpath):
+        self.h5path = h5path
+        self.files = os.listdir(h5path)
+        self.files.sort()
+        self.total = 0
+        self.dividers = [0]
+        for file in self.files:
+            self.total += len(h5py.File(os.path.join(h5path,file)).keys())-1
+            self.dividers.append(self.total)
+
+        self.tags = pd.read_csv(tagpath,header = None)
+
+    def __len__(self):
+        return self.total
+
+    def __getitem__(self,idx):
+
+        filefrom = ""
+        for n,divider in enumerate(self.dividers):
+            if idx < divider:
+                filefrom = self.files[n-1]
+                index = idx-self.dividers[n-1]
+                break
+            
+        framename = "frame{}".format(str(index).zfill(4))
+
+        image = np.array(h5py.File(os.path.join(self.h5path,filefrom))[framename])
+
+        mode = self.tags[idx]
+
+        sample = {'image' : image, 'mode' : mode}
         return sample
