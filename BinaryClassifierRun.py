@@ -9,15 +9,18 @@ from os.path import join
 from numpy import load,random
 import wandb
 import gc
+import time
 
 #from UtilityFunctions import LogitPercentConverter,H5ToNumpy as LPC,H2N
+
+RunTime = time.time()
 
 ###
 #Globals/Constants
 ###
 
 #Overall Info
-PROJECT = "LHClassifierGeoffSaveLoadTest"
+PROJECT = "LHClassifierGeoffTimeTest"
 MODEL_NAME = "AlexNetV2"
 
 DEVICE = "cuda" if cuda.is_available() else "cpu"
@@ -27,7 +30,7 @@ SHUFFLE = True
 WORKERS = 0
 BATCH_SIZE = 20
 
-EPOCHS = 100
+EPOCHS = 1
 LOSS_FN = "BCELoss"
 OPTIMIZER = "SGD"
 MOMENTUM = 0.9
@@ -149,6 +152,8 @@ for Epoch in range(EPOCHS):
         if Epoch%EPOCH_SAVE_INTERVAL == 0:
             save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,(PROJECT + "_" + wandb.run.name + "_Epoch_" + str(Epoch) + ".pth")))
 
+TVTime = time.time() - RunTime
+
 del TrainingDataSet, TrainLoader, ValidationDataSet, ValidationLoader
 gc.collect()
 
@@ -161,9 +166,15 @@ if TESTING:
     wandb.log({'Final Test Loss':TestingLoss,
                 'Final Test Correct': Correct})
 
+TVTTime = time.time() - RunTime
+
 ###
 #Outputs
 ###
+
+wandb.log({'TV time':TVTime,
+            'TVTTime':TVTTime})
+
 
 if FINAL_SAVING:
     save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,("{}_{}_Full.pth").format(PROJECT,wandb.run.name)))
