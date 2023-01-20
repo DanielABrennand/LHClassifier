@@ -43,14 +43,14 @@ if not SEED:
     SEED = random.randint(0,9223372036854775807)
 
 #Data Locations
-TRAINING_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Training"
-TRAINING_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Training/TrainingModes.npy"
+TRAINING_DATA_ROOT = "/home/dbren/VSCode/DataStore/RBB_FILES/Training"
+TRAINING_MODES_PATH = "/home/dbren/VSCode/DataStore/RBB_FILES/Training/TrainingModes.csv"
 
-VALIDATION_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Validation"
-VALIDATION_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Validation/ValidationModes.npy"
+VALIDATION_DATA_ROOT = "/home/dbren/VSCode/DataStore/RBB_FILES/Validation"
+VALIDATION_MODES_PATH = "/home/dbren/VSCode/DataStore/RBB_FILES/Validation/ValidationModes.csv"
 
-TESTING_DATA_ROOT = "/home/dbren/VSCode/DataStore/NumpyData/Testing"
-TESTING_MODES_PATH = "/home/dbren/VSCode/DataStore/NumpyData/Testing/TestingModes.npy"
+TESTING_DATA_ROOT = "/home/dbren/VSCode/DataStore/RBB_FILES/Testing"
+TESTING_MODES_PATH = "/home/dbren/VSCode/DataStore/RBB_FILES/Testing/TestingModes.csv"
 
 IMAGE_SIZE = 512
 #Optional Modes
@@ -96,36 +96,16 @@ Net = AlexNet().to(DEVICE)
 ###
 #Data input
 ###
-'''
-TrainingDataFrames = from_numpy(load(TRAINING_DATA_ROOT))
-TrainingDataModes = from_numpy(load(TRAINING_MODES_PATH))
-TrainingDataSet = TensorDataset(TrainingDataFrames,TrainingDataModes)
-TrainLoader = DataLoader(TrainingDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
-del TrainingDataFrames, TrainingDataModes
 
-ValidationDataFrames = from_numpy(load(VALIDATION_DATA_ROOT))
-ValidationDataModes = from_numpy(load(VALIDATION_MODES_PATH))
-ValidationDataSet = TensorDataset(ValidationDataFrames,ValidationDataModes)
-ValidationLoader = DataLoader(ValidationDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
-del ValidationDataFrames, ValidationDataModes
+from DataSets import H5DataSet
 
-TestingDataFrames = from_numpy(load(TESTING_DATA_ROOT))
-TestingDataMode = from_numpy(load(TESTING_MODES_PATH))
-TestingDataSet = TensorDataset(TestingDataFrames,TestingDataMode)
-TestLoader = DataLoader(TestingDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
-del TestingDataFrames, TestingDataMode
-
-gc.collect()
-'''
-from DataSets import NumpyDataSet
-
-TrainingDataSet = NumpyDataSet(TRAINING_DATA_ROOT,TRAINING_MODES_PATH)
+TrainingDataSet = H5DataSet(TRAINING_DATA_ROOT,TRAINING_MODES_PATH)
 TrainLoader = DataLoader(TrainingDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
 
-ValidationDataSet = NumpyDataSet(VALIDATION_DATA_ROOT,VALIDATION_MODES_PATH)
+ValidationDataSet = H5DataSet(VALIDATION_DATA_ROOT,VALIDATION_MODES_PATH)
 ValidationLoader = DataLoader(ValidationDataSet, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=WORKERS)
 
-TestingDataSet = NumpyDataSet(TESTING_DATA_ROOT,TESTING_MODES_PATH)
+TestingDataSet = H5DataSet(TESTING_DATA_ROOT,TESTING_MODES_PATH)
 TestLoader = DataLoader(TestingDataSet, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS)
 
 ###
