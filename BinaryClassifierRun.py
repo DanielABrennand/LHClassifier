@@ -7,9 +7,9 @@ from torch.utils.data import DataLoader,TensorDataset
 from torchvision import transforms
 from os.path import join
 from numpy import load,random
-import wandb
 import gc
 import time
+from simvue import Run
 
 #from UtilityFunctions import LogitPercentConverter,H5ToNumpy as LPC,H2N
 
@@ -62,11 +62,14 @@ TESTING = True
 #Outputs
 HEURISTICS_SAVE_PATH = "/home/dbren/VSCode/DataStore/Heuristics"
 
+SIMVUE_FOLDER = "/Classifier"
+
 ###
 #WandB setup
 ###
 
-configuration = {"Model": MODEL_NAME,
+configuration = {"Project": PROJECT,
+                 "Model": MODEL_NAME,
                  "Epochs": EPOCHS,
                  "Batch Size": BATCH_SIZE,
                  "Optimizer": OPTIMIZER,
@@ -80,9 +83,9 @@ configuration = {"Model": MODEL_NAME,
                  "Confidence Threshold": CONFIDENCE_THRESHOLD
                 }
 
-run = wandb.init(project=PROJECT,
-                 notes='',
-                 config=configuration)
+run = Run()
+
+run.init(metadata=configuration,folder=SIMVUE_FOLDER)
 
 manual_seed(SEED)
 
@@ -124,13 +127,13 @@ for Epoch in range(EPOCHS):
     TrainingLoss = BinaryClassiferTrainingLoop(DEVICE,TrainLoader,Net,LossFn,Optimizer)
     ValidationLoss,Correct = BinaryClassiferTestingLoop(DEVICE,ValidationLoader,Net,LossFn,CONFIDENCE_THRESHOLD)
 
-    wandb.log({'Train Loss': TrainingLoss, 
+    run.log_metrics({'Train Loss': TrainingLoss, 
                'Validation Loss': ValidationLoss,
                'Validation Correct': Correct})
 
     if EPOCH_SAVE_INTERVAL:
         if Epoch%EPOCH_SAVE_INTERVAL == 0:
-            save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,(PROJECT + "_" + wandb.run.name + "_Epoch_" + str(Epoch) + ".pth")))
+            save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,(PROJECT + "_" + run.name + "_Epoch_" + str(Epoch) + ".pth")))
 
 TVTime = time.time() - RunTime
 
@@ -143,7 +146,7 @@ gc.collect()
 
 if TESTING:
     TestingLoss,Correct = BinaryClassiferTestingLoop(DEVICE,TestLoader,Net,LossFn,CONFIDENCE_THRESHOLD,True)
-    wandb.log({'Final Test Loss':TestingLoss,
+    run.log_metrics({'Final Test Loss':TestingLoss,
                 'Final Test Correct': Correct})
 
 TVTTime = time.time() - RunTime
@@ -152,9 +155,9 @@ TVTTime = time.time() - RunTime
 #Outputs
 ###
 
-wandb.log({'TV time':TVTime,
+run.log_metrics({'TV time':TVTime,
             'TVTTime':TVTTime})
 
 
 if FINAL_SAVING:
-    save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,("{}_{}_Full.pth").format(PROJECT,wandb.run.name)))
+    save(Net.state_dict(), join(HEURISTICS_SAVE_PATH,("{}_{}_Full.pth").format(PROJECT,run.name)))
